@@ -318,6 +318,20 @@ class LinearProgramSolver:
         
         return solution, obj_value, status
     
+
+    def construct_E(B_inv, a_col, r):
+        m = B_inv.shape[0]
+        E = np.eye(m)  # Start with the identity matrix
+
+        # Compute the r-th column of E
+        pivot = a_col[r]
+        for i in range(m):
+            if i == r:
+                E[i, r] = 1 / pivot  # Update pivot row
+            else:
+                E[i, r] = -a_col[i] / pivot  # Update other rows
+        return E
+    
     def _revised_simplex(self, A, b, c, initial_basis=None, minimize=False, max_iterations=100):
         """
         Revised Simplex Method solver
@@ -349,15 +363,18 @@ class LinearProgramSolver:
         obj_multiplier = -1 if minimize else 1
         adj_c = obj_multiplier * c
         
-        for _ in range(max_iterations):
+        for i in range(max_iterations):
             # Compute basic solution
-            try:
-                x_B = np.linalg.solve(B, b)
-            except np.linalg.LinAlgError:
-                return None, None, 'Singular Matrix'
-            
+            if i % 30 == 0:
+                try:
+                    B_inv = np.linalg.inv(B)
+                except np.linalg.LinAlgError:
+                    return None, None, 'Singular Matrix'
+            E = #constuujcjıcdc()
+            B_inv = E @ B_inv
+            x_B = np.dot(B_inv, b)
             # Compute reduced costs
-            B_inv = np.linalg.inv(B)
+            
             reduced_costs = np.dot(np.dot(adj_c[basic_vars], B_inv), A) - adj_c
             
             # Check for optimality
@@ -376,7 +393,7 @@ class LinearProgramSolver:
             
             # Compute pivot column
             try:
-                pivot_col = np.linalg.solve(B, A[:, entering_idx])
+                pivot_col = np.dot(B_inv, A[:, entering_idx])
             except np.linalg.LinAlgError:
                 return None, None, 'Numerical Error'
             
