@@ -261,7 +261,7 @@ class LinearProgramSolver:
                     return None, None, 'Singular Matrix', None
             else:
                 # r = number of equation containing the leaving basic variable
-                r = basic_vars.index(leaving_idx)
+                r = leaving_idx_in_b
                 E = self.construct_E(B_inv, A[:, entering_idx], r)
                 B_inv = E @ B_inv
             x_B = np.dot(B_inv, b)
