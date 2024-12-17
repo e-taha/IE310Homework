@@ -209,7 +209,9 @@ class LinearProgramSolver:
     def construct_E(self, B_inv, a_col, r):
         m = B_inv.shape[0]
         E = np.eye(m)  # Start with the identity matrix
-
+        print("a_col: ", a_col)
+        print("r: ", r)
+        # print("B_inv: ", B_inv)
         # Compute the r-th column of E
         pivot = a_col[r]
         for i in range(m):
@@ -258,13 +260,28 @@ class LinearProgramSolver:
                 except np.linalg.LinAlgError:
                     return None, None, 'Singular Matrix', None
             else:
-                E = self.construct_E(B_inv, A[:, entering_idx], leaving_idx)
+                E = self.construct_E(B_inv, A[:, entering_idx], leaving_index_x)
                 B_inv = E @ B_inv
             x_B = np.dot(B_inv, b)
             # Compute reduced costs
+            print("B ")
+            print(B)
+            print("B_inv ")
+            print(B_inv)
+            print("A ")
+            print(A)
+            # print("adj_c ", adj_c)
+            print("x_B ")
+            print(x_B)
+            print("basic_vars ", basic_vars)
+            print("non_basic_vars ", non_basic_vars)
+
             
             reduced_costs = np.dot(np.dot(adj_c[basic_vars], B_inv), A) - adj_c
-            
+            print("reduced_costs: ")    
+            print(reduced_costs)
+
+            input("Press Enter to continue to the next iteration...")
             # Check for optimality
             if np.all(reduced_costs >= -tolerance):
                 # Construct full solution vector
@@ -277,8 +294,10 @@ class LinearProgramSolver:
                 return x, obj_value, 'Optimal', basic_vars
             
             # Select entering variable (most negative reduced cost)
+             
             entering_idx = np.argmin(reduced_costs)
-            
+            entering_index_x = np.where(non_basic_vars == entering_idx)[0][0]
+
             # Compute pivot column
             try:
                 pivot_col = np.dot(B_inv, A[:, entering_idx])
@@ -290,16 +309,22 @@ class LinearProgramSolver:
                 return None, None, 'Unbounded', None
             
             # Compute ratios for leaving variable
+
             ratios = np.where(pivot_col > tolerance, x_B / pivot_col, np.inf)
-            leaving_idx = np.argmin(ratios)
+            leaving_index_x = np.argmin(ratios)
+            leaving_idx = basic_vars[leaving_index_x]
+
             
             # Update basis
-            B[:, leaving_idx] = A[:, entering_idx]
-            
+            B[:, leaving_index_x] = A[:, entering_idx]
+
             # Update basic and non-basic variable lists
-            basic_vars[leaving_idx] = entering_idx
-            non_basic_vars.remove(entering_idx)
-            non_basic_vars.append(basic_vars[leaving_idx])
+            print("entering_idx: ", entering_idx)
+            print("leaving_idx: ", leaving_idx)
+            basic_vars[leaving_index_x] = entering_idx
+            non_basic_vars[entering_index_x] = leaving_idx
+            print("basic_vars: ", basic_vars)
+            print("non_basic_vars: ", non_basic_vars)
         
         return None, None, 'Max Iterations Reached', None
     
@@ -346,13 +371,13 @@ class LinearProgramSolver:
 def main():
     # Example 1: Problem with negative RHS
     print("Example 1: Negative RHS")
-    c = np.array([3, 2])
+    c = np.array([2, 7])
     A = np.array([
-        [1, 1],    # x + y ≤ -5
-        [2, 1]     # 2x + y ≥ 10
+        [2, 1],    # x + y ≤ -5
+        [4, 2]     # 2x + y ≥ 10
     ])
-    b = np.array([-5, 10])
-    constraints = ['<=', '>=']
+    b = np.array([6, 12])
+    constraints = ['<=', '<=']
     
     lp = LinearProgramSolver(c, A, b, constraints, objective='max')
     solution, obj_value, status = lp.solve()
@@ -379,5 +404,63 @@ def main():
     print("Optimal Solution:", solution)
     print("Optimal Objective Value:", obj_value)
 
+def main2():
+    c = np.array([7, 2, 0, 6, 2, 4, 7,7, 6, 0, 2, 6, 5, 4,5, 4, 3, 4, 3, 6, 5,2, 4, 2, 3, 7, 5, 5,2, 4, 0, 6, 2, 5, 0,7, 2, 1, 2, 3, 1, 4,5, 1, 2, 3, 7, 2, 1])
+    A = np.array([[0 for _ in range(49)] for _ in range(14)])
+    b = np.array([10, 10, 10, 9, 10, 7, 9, 10, 10, 10, 10, 10, 7, 8])
+    constraints = ['=' for _ in range(14)]
+    for i in range(7):
+        for j in range(7):
+            A[i][i*7+j] = 1
+    for i in range(7):
+        for j in range(7):
+            A[i+7][i+j*7] = 1
+    
+    lp = LinearProgramSolver(c, A, b, constraints, objective='min')
+    solution, obj_value, status = lp.solve()
+    print("Status:", status)
+    print("Optimal Solution:", solution)
+    print("Optimal Objective Value:", obj_value)
+
+
+def main3():
+    c = np.array([5, 3, 6, 7,5, 5, 7, 1,0, 0, 2, 3,5, 4, 6, 0])
+    A = np.array([[0 for _ in range(16)] for _ in range(8)])
+    b = np.array([9, 10, 10, 7, 8, 10, 9, 9])
+    constraints = ['=' for _ in range(8)]
+    for i in range(4):
+        for j in range(4):
+            A[i][i*4+j] = 1
+    for i in range(4):
+        for j in range(4):
+            A[i+4][i+j*4] = 1
+    
+    lp = LinearProgramSolver(c, A, b, constraints, objective='min')
+    solution, obj_value, status = lp.solve()
+    print("Status:", status)
+    print("Optimal Solution:", solution)
+    print("Optimal Objective Value:", obj_value)
+
+
+def example4():
+    c = np.array([4, 3, 5, 5, 2, 6, 7, 4, 0])
+    A = np.array([[0 for _ in range(9)] for _ in range(6)])
+    b = np.array([5, 10, 7, 9, 6, 7])
+    constraints = ['=' for _ in range(6)]
+    for i in range(3):
+        for j in range(3):
+            A[i][i*3+j] = 1
+    for i in range(3):
+        for j in range(3):
+            A[i+3][i+j*3] = 1
+    
+    lp = LinearProgramSolver(c, A, b, constraints, objective='min')
+    solution, obj_value, status = lp.solve()
+    print("Status:", status)
+    print("Optimal Solution:", solution)
+    print("Optimal Objective Value:", obj_value)
+
+
+
 if __name__ == "__main__":
-    main()
+    example4()
