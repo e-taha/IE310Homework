@@ -51,12 +51,12 @@ def generate_problem_instance(I, J, C, A):
     # A: Maximum demand/supply
 
     supply, demand, costs, solution = generate_random_solution(I, J, C, A)
-    print("Solution: ")
-    print(solution)
-    print("Supply: ", supply)
-    print("Demand: ", demand)
-    print("Costs: ")
-    print(costs)
+    # print("Solution: ")
+    # print(solution)
+    # print("Supply: ", supply)
+    # print("Demand: ", demand)
+    # print("Costs: ")
+    # print(costs)
 
     return supply, demand, costs
 
@@ -77,11 +77,13 @@ def utilize_solver(supply, demand, costs):
     prob += lpSum([x[i][j] * costs[i][j] for i in range(len(supply)) for j in range(len(demand))])
 
     prob.solve()
-    print("Status: ", LpStatus[prob.status])
-    print("Objective: ", value(prob.objective))
-    print("Solution: ")
-    for i in range(len(supply)):
-        print([value(x[i][j]) for j in range(len(demand))])
+    # print("Status: ", LpStatus[prob.status])
+    # print("Objective: ", value(prob.objective))
+    # print("Solution: ")
+    # for i in range(len(supply)):
+    #     print([value(x[i][j]) for j in range(len(demand))])
+    
+    return LpStatus[prob.status], value(prob.objective), [[value(x[i][j]) for j in range(len(demand))] for i in range(len(supply))]
 
 # LP Format:
 # C = [c_i] (Cost vector)
@@ -107,9 +109,9 @@ def standardize_lp(C, A, b, const_type, x_type, type): # const_types will be <= 
     pass
 
 
-
-if(len(sys.argv) < 5):
-    print("Usage: python3 generator.py I J C A")
-I, J, C, A = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-supply, demand, costs = generate_problem_instance(int(I), int(J), int(C), int(A))
-utilize_solver(supply, demand, costs)
+if __name__ == "__main__":
+    if(len(sys.argv) < 5):
+        print("Usage: python3 generator.py I J C A")
+    I, J, C, A = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    supply, demand, costs = generate_problem_instance(int(I), int(J), int(C), int(A))
+    utilize_solver(supply, demand, costs)

@@ -1,7 +1,6 @@
 import numpy as np
 import copy
 
-
 class LinearProgramSolver:
     def __init__(self, A, b, c, constraint_types=None, variable_types=None, objective='max'):
         """
@@ -115,10 +114,7 @@ class LinearProgramSolver:
         Modified A matrix, b vector, and c vector
         """
         # Handle objective function
-        if self.objective == 'min':
-            c = copy.deepcopy(-c)
-        else:
-            c = copy.deepcopy(c)
+        c = copy.deepcopy(c)
         
         # Create a copy of constraint matrix and RHS
         A = copy.deepcopy(A)
@@ -177,7 +173,7 @@ class LinearProgramSolver:
         Optimal solution, objective value, status
         """
         m, n = A.shape
-        
+        tolerance = 1e-8
         # Phase I: Minimize sum of artificial variables
         phase1_c = np.zeros(n)
         phase1_c[artificial_cols] = 1
@@ -191,11 +187,37 @@ class LinearProgramSolver:
             initial_basis=initial_basis, 
             minimize=True
         )
+
+        
+
         
         # Check feasibility
-        if phase1_status != 'Optimal' or abs(phase1_obj) > 1e-8 or np.any(np.isin(np.array(soln_basis), np.array(artificial_cols))):
+        # if np.any(np.isin(np.array(soln_basis), np.array(artificial_cols))):
+        will_be_removed_rows = []
+        for i, idx in enumerate(soln_basis):
+            if idx in artificial_cols:
+                # print("idx: ", idx)
+                # print("phase1_solution[idx]: ", phase1_solution[idx])
+                if(phase1_solution[idx] > tolerance):
+                    return None, None, 'Infeasible'
+                else:
+                    will_be_removed_rows.append(i)
+        
+        A = np.delete(A, will_be_removed_rows, axis=0)
+        b = np.delete(b, will_be_removed_rows)
+
+
+
+        if phase1_status != 'Optimal' or abs(phase1_obj) > tolerance:
             return None, None, 'Infeasible'
         
+
+        non_artificial_cols = [i for i in range(n) if i not in artificial_cols]
+        A = A[:, non_artificial_cols]
+        c = c[non_artificial_cols]
+        soln_basis = [i for i in soln_basis if i not in artificial_cols]
+        
+        # print()
         # Phase II: Solve original problem
         solution, obj_value, status, second_soln_basis = self._revised_simplex(
             A, b, c, 
@@ -209,8 +231,8 @@ class LinearProgramSolver:
     def construct_E(self, B_inv, a_col, r):
         m = B_inv.shape[0]
         E = np.eye(m)  # Start with the identity matrix
-        print("a_col: ", a_col)
-        print("r: ", r)
+        # print("a_col: ", a_col)
+        # print("r: ", r)
         # print("B_inv: ", B_inv)
         # Compute the r-th column of E
         pivot = a_col[r]
@@ -221,7 +243,7 @@ class LinearProgramSolver:
                 E[i, r] = -a_col[i] / pivot  # Update other rows
         return E
     
-    def _revised_simplex(self, A, b, c, initial_basis=None, minimize=False, max_iterations=100):
+    def _revised_simplex(self, A, b, c, initial_basis=None, minimize=False, max_iterations=10000):
         """
         Revised Simplex Method solver
         
@@ -251,39 +273,43 @@ class LinearProgramSolver:
         # Objective coefficient adjustment for minimization
         obj_multiplier = -1 if minimize else 1
         adj_c = obj_multiplier * c
-        
+        B_inv_real = None
         for i in range(max_iterations):
             # Compute basic solution
             if i % 30 == 0:
                 try:
                     B_inv = np.linalg.inv(B)
+                    B_inv_real = np.linalg.inv(B)
                 except np.linalg.LinAlgError:
                     return None, None, 'Singular Matrix', None
             else:
                 # r = number of equation containing the leaving basic variable
                 r = leaving_idx_in_b
-                E = self.construct_E(B_inv, A[:, entering_idx], r)
+                E = self.construct_E(B_inv, np.dot(B_inv, A[:, entering_idx]), r)
                 B_inv = E @ B_inv
+                B_inv_real = np.linalg.inv(B)
             x_B = np.dot(B_inv, b)
             # Compute reduced costs
-            print("B ")
-            print(B)
-            print("B_inv ")
-            print(B_inv)
-            print("A ")
-            print(A)
-            # print("adj_c ", adj_c)
-            print("x_B ")
-            print(x_B)
-            print("basic_vars ", basic_vars)
-            print("non_basic_vars ", non_basic_vars)
+            # print("B ")
+            # print(B)
+            # print("B_inv ")
+            # print(B_inv)
+            # print("B_inv_real ")
+            # print(B_inv_real)
+            # print("A ")
+            # print(A)
+            # # print("adj_c ", adj_c)
+            # print("x_B ")
+            # print(x_B)
+            # print("basic_vars ", basic_vars)
+            # print("non_basic_vars ", non_basic_vars)
 
             
             reduced_costs = (np.dot(np.dot(adj_c[basic_vars], B_inv), A) - adj_c)[non_basic_vars]
-            print("reduced_costs: ")    
-            print(reduced_costs)
+            # print("reduced_costs: ")    
+            # print(reduced_costs)
 
-            input("Press Enter to continue to the next iteration...")
+            # input("Press Enter to continue to the next iteration...")
             # Check for optimality
             if np.all(reduced_costs >= -tolerance):
                 # Construct full solution vector
@@ -292,7 +318,7 @@ class LinearProgramSolver:
                     if var < n:
                         x[var] = x_B[i]
                 
-                obj_value = obj_multiplier * np.dot(c, x)
+                obj_value = np.dot(c, x)
                 return x, obj_value, 'Optimal', basic_vars
             
             # Select entering variable (most negative reduced cost)
@@ -321,12 +347,12 @@ class LinearProgramSolver:
             B[:, leaving_idx_in_b] = A[:, entering_idx]
 
             # Update basic and non-basic variable lists
-            print("entering_idx: ", entering_idx)
-            print("leaving_idx: ", leaving_idx)
+            # print("entering_idx: ", entering_idx)
+            # print("leaving_idx: ", leaving_idx)
             basic_vars[leaving_idx_in_b] = entering_idx
             non_basic_vars[entering_idx_in_nb] = leaving_idx
-            print("basic_vars: ", basic_vars)
-            print("non_basic_vars: ", non_basic_vars)
+            # print("basic_vars: ", basic_vars)
+            # print("non_basic_vars: ", non_basic_vars)
         
         return None, None, 'Max Iterations Reached', None
     
@@ -462,7 +488,36 @@ def example4():
     print("Optimal Solution:", solution)
     print("Optimal Objective Value:", obj_value)
 
+def glass():
+    c = np.array([3, 5])
+    A = np.array([[1, 0], [0, 2], [3, 2]])
+    b = np.array([4, 12, 18])
+    constraints = ['<=' for _ in range(3)]
+    lp = LinearProgramSolver(A, b, c, constraints, objective='max')
+    solution, obj_value, status = lp.solve()
+    print("Status:", status)
+    print("Optimal Solution:", solution)
+    print("Optimal Objective Value:", obj_value)
 
+def getTheElementary():
+    B_old = [[ 1,  0,  0,  0,  0,  0,],
+ [ 1,  1,  0, -1,  0,  0,],
+ [ 0,  0,  1,  0,  0,  0,],
+ [-1,  0,  0,  1,  0,  0,],
+ [ 0,  0,  0,  0,  1,  0,],
+ [ 0,  0,  0,  0,  0,  1,]]
+    
+    B_new = [[ 1,  0,  0,  0,  0,  0,],
+ [ 0,  1,  0, -1,  0,  0,],
+ [ 0,  0,  1,  0,  0,  0,],
+ [ 0,  0,  0,  1,  0,  0,],
+ [-1,  0,  0,  0,  1,  0,],
+ [ 0,  0,  0,  0,  0,  1,]]
+    
+    E = B_new @ np.linalg.inv(B_old)
+
+    print(E)
+    return E
 
 if __name__ == "__main__":
     example4()
