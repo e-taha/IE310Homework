@@ -3,7 +3,7 @@ import copy
 
 
 class LinearProgramSolver:
-    def __init__(self, c, A, b, constraint_types=None, variable_types=None, objective='max'):
+    def __init__(self, A, b, c, constraint_types=None, variable_types=None, objective='max'):
         """
         Initialize Linear Programming Problem
         
@@ -16,9 +16,9 @@ class LinearProgramSolver:
         objective: 'max' or 'min'
         """
         # Convert inputs to numpy arrays
-        self.c = np.array(c, dtype=float)
         self.A = np.array(A, dtype=float)
         self.b = np.array(b, dtype=float)
+        self.c = np.array(c, dtype=float)
         
         # Set default constraint types if not provided
         if constraint_types is None:
@@ -240,7 +240,7 @@ class LinearProgramSolver:
         
         # Initialize basis
         if initial_basis is None:
-            basic_vars = list(range(n, n + m))
+            basic_vars = list(range(n-m, n))
             non_basic_vars = list(range(n))
             B = np.eye(m)
         else:
@@ -260,7 +260,9 @@ class LinearProgramSolver:
                 except np.linalg.LinAlgError:
                     return None, None, 'Singular Matrix', None
             else:
-                E = self.construct_E(B_inv, A[:, entering_idx], leaving_index_x)
+                # r = number of equation containing the leaving basic variable
+                r = basic_vars.index(leaving_idx)
+                E = self.construct_E(B_inv, A[:, entering_idx], r)
                 B_inv = E @ B_inv
             x_B = np.dot(B_inv, b)
             # Compute reduced costs
@@ -277,7 +279,7 @@ class LinearProgramSolver:
             print("non_basic_vars ", non_basic_vars)
 
             
-            reduced_costs = np.dot(np.dot(adj_c[basic_vars], B_inv), A) - adj_c
+            reduced_costs = (np.dot(np.dot(adj_c[basic_vars], B_inv), A) - adj_c)[non_basic_vars]
             print("reduced_costs: ")    
             print(reduced_costs)
 
@@ -295,8 +297,8 @@ class LinearProgramSolver:
             
             # Select entering variable (most negative reduced cost)
              
-            entering_idx = np.argmin(reduced_costs)
-            entering_index_x = np.where(non_basic_vars == entering_idx)[0][0]
+            entering_idx_in_nb = np.argmin(reduced_costs)
+            entering_idx = non_basic_vars[entering_idx_in_nb]
 
             # Compute pivot column
             try:
@@ -311,18 +313,18 @@ class LinearProgramSolver:
             # Compute ratios for leaving variable
 
             ratios = np.where(pivot_col > tolerance, x_B / pivot_col, np.inf)
-            leaving_index_x = np.argmin(ratios)
-            leaving_idx = basic_vars[leaving_index_x]
+            leaving_idx_in_b = np.argmin(ratios)
+            leaving_idx = basic_vars[leaving_idx_in_b]
 
             
             # Update basis
-            B[:, leaving_index_x] = A[:, entering_idx]
+            B[:, leaving_idx_in_b] = A[:, entering_idx]
 
             # Update basic and non-basic variable lists
             print("entering_idx: ", entering_idx)
             print("leaving_idx: ", leaving_idx)
-            basic_vars[leaving_index_x] = entering_idx
-            non_basic_vars[entering_index_x] = leaving_idx
+            basic_vars[leaving_idx_in_b] = entering_idx
+            non_basic_vars[entering_idx_in_nb] = leaving_idx
             print("basic_vars: ", basic_vars)
             print("non_basic_vars: ", non_basic_vars)
         
@@ -379,7 +381,7 @@ def main():
     b = np.array([6, 12])
     constraints = ['<=', '<=']
     
-    lp = LinearProgramSolver(c, A, b, constraints, objective='max')
+    lp = LinearProgramSolver(A, b, c, constraints, objective='max')
     solution, obj_value, status = lp.solve()
     
     print("Status:", status)
@@ -397,7 +399,7 @@ def main():
     constraints = ['<=', '<=']
     variable_types = ['unrestricted', 'non-positive']
     
-    lp = LinearProgramSolver(c, A, b, constraints, variable_types, objective='min')
+    lp = LinearProgramSolver(A, b, c, constraints, variable_types, objective='min')
     solution, obj_value, status = lp.solve()
     
     print("Status:", status)
@@ -416,7 +418,7 @@ def main2():
         for j in range(7):
             A[i+7][i+j*7] = 1
     
-    lp = LinearProgramSolver(c, A, b, constraints, objective='min')
+    lp = LinearProgramSolver(A, b, c, constraints, objective='min')
     solution, obj_value, status = lp.solve()
     print("Status:", status)
     print("Optimal Solution:", solution)
@@ -435,7 +437,7 @@ def main3():
         for j in range(4):
             A[i+4][i+j*4] = 1
     
-    lp = LinearProgramSolver(c, A, b, constraints, objective='min')
+    lp = LinearProgramSolver(A, b, c, constraints, objective='min')
     solution, obj_value, status = lp.solve()
     print("Status:", status)
     print("Optimal Solution:", solution)
@@ -454,7 +456,7 @@ def example4():
         for j in range(3):
             A[i+3][i+j*3] = 1
     
-    lp = LinearProgramSolver(c, A, b, constraints, objective='min')
+    lp = LinearProgramSolver(A, b, c, constraints, objective='min')
     solution, obj_value, status = lp.solve()
     print("Status:", status)
     print("Optimal Solution:", solution)
