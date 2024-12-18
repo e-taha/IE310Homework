@@ -129,7 +129,25 @@ $$
 
 ---
 
-## **5. Conclusions**
+## 5. Always Integers
+
+We observe that the solutions are always integers, never fractional. The reason is as follows: 
+
+In the revised simplex method, the solution $\mathbf{x}_b$ is determined by $\mathbf{B}^{-1}\mathbf{b}$. In a transportation problem, the matrices $\mathbf{A}$ and $\mathbf{b}$ are initialized as integers. This means that the only source of fractionality can be from $\mathbf{B}^{-1}$. 
+
+The way we calculate $\mathbf{B}^{-1}$ is through $\mathbf{E}$ matrices. We can write $\mathbf{B}^{-1}$ as:
+
+$$
+\mathbf{B}^{-1} = \mathbf{E}_n \cdots \mathbf{E}_3 \mathbf{E}_2 \mathbf{E}_1.
+$$
+
+The form of any of these $\mathbf{E}$ matrices is an identity matrix except for one column. The source of fractionality can only be from that special column. When we inspect the formula for that column, we find a division by an element of the $\mathbf{B}^{-1}\mathbf{A}$ matrix. 
+
+In transportation problems, the only values $\mathbf{A}$ can take (apart from $0$) are $1$. Therefore, this division will not introduce any fractions. Since that was the only potential source of fractions, we do not encounter fractional solutions at any step of the solution. 
+
+Additionally, the first $\mathbf{B}^{-1}$ is the identity matrix $\mathbf{I}$, which further ensures integrality.
+
+## **6. Conclusions**
 
 - **Solver 1** (LP Solver) demonstrates quadratic time complexity and is more efficient for solving transportation problems, especially as problem size increases.  
 - **Solver 2** (Revised Simplex) exhibits cubic time complexity, making it less efficient for larger problems.  
@@ -137,7 +155,7 @@ $$
 
 ---
 
-## **6. Code Implementation**
+## **7. Code Implementation**
 All the code for the experiments, problem generation and solver implementations can be found in the submitted files. Here is a key snippet from the code:
 
 ### **Solver 2: Revised Simplex**
