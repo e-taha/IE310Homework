@@ -231,9 +231,6 @@ class LinearProgramSolver:
     def construct_E(self, B_inv, a_col, r):
         m = B_inv.shape[0]
         E = np.eye(m)  # Start with the identity matrix
-        # print("a_col: ", a_col)
-        # print("r: ", r)
-        # print("B_inv: ", B_inv)
         # Compute the r-th column of E
         pivot = a_col[r]
         for i in range(m):
@@ -290,24 +287,9 @@ class LinearProgramSolver:
                 B_inv_real = np.linalg.inv(B)
             x_B = np.dot(B_inv, b)
             # Compute reduced costs
-            # print("B ")
-            # print(B)
-            # print("B_inv ")
-            # print(B_inv)
-            # print("B_inv_real ")
-            # print(B_inv_real)
-            # print("A ")
-            # print(A)
-            # # print("adj_c ", adj_c)
-            # print("x_B ")
-            # print(x_B)
-            # print("basic_vars ", basic_vars)
-            # print("non_basic_vars ", non_basic_vars)
 
             
             reduced_costs = (np.dot(np.dot(adj_c[basic_vars], B_inv), A) - adj_c)[non_basic_vars]
-            # print("reduced_costs: ")    
-            # print(reduced_costs)
 
             # input("Press Enter to continue to the next iteration...")
             # Check for optimality
@@ -347,12 +329,8 @@ class LinearProgramSolver:
             B[:, leaving_idx_in_b] = A[:, entering_idx]
 
             # Update basic and non-basic variable lists
-            # print("entering_idx: ", entering_idx)
-            # print("leaving_idx: ", leaving_idx)
             basic_vars[leaving_idx_in_b] = entering_idx
             non_basic_vars[entering_idx_in_nb] = leaving_idx
-            # print("basic_vars: ", basic_vars)
-            # print("non_basic_vars: ", non_basic_vars)
         
         return None, None, 'Max Iterations Reached', None
     
@@ -396,7 +374,7 @@ class LinearProgramSolver:
         
         return solution, obj_value, status
 
-def main():
+def main1():
     # Example 1: Problem with negative RHS
     print("Example 1: Negative RHS")
     c = np.array([2, 7])
@@ -498,26 +476,6 @@ def glass():
     print("Status:", status)
     print("Optimal Solution:", solution)
     print("Optimal Objective Value:", obj_value)
-
-def getTheElementary():
-    B_old = [[ 1,  0,  0,  0,  0,  0,],
- [ 1,  1,  0, -1,  0,  0,],
- [ 0,  0,  1,  0,  0,  0,],
- [-1,  0,  0,  1,  0,  0,],
- [ 0,  0,  0,  0,  1,  0,],
- [ 0,  0,  0,  0,  0,  1,]]
-    
-    B_new = [[ 1,  0,  0,  0,  0,  0,],
- [ 0,  1,  0, -1,  0,  0,],
- [ 0,  0,  1,  0,  0,  0,],
- [ 0,  0,  0,  1,  0,  0,],
- [-1,  0,  0,  0,  1,  0,],
- [ 0,  0,  0,  0,  0,  1,]]
-    
-    E = B_new @ np.linalg.inv(B_old)
-
-    print(E)
-    return E
 
 if __name__ == "__main__":
     example4()

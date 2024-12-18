@@ -51,12 +51,6 @@ def generate_problem_instance(I, J, C, A):
     # A: Maximum demand/supply
 
     supply, demand, costs, solution = generate_random_solution(I, J, C, A)
-    # print("Solution: ")
-    # print(solution)
-    # print("Supply: ", supply)
-    # print("Demand: ", demand)
-    # print("Costs: ")
-    # print(costs)
 
     return supply, demand, costs
 
@@ -77,11 +71,6 @@ def utilize_solver(supply, demand, costs):
     prob += lpSum([x[i][j] * costs[i][j] for i in range(len(supply)) for j in range(len(demand))])
 
     prob.solve()
-    # print("Status: ", LpStatus[prob.status])
-    # print("Objective: ", value(prob.objective))
-    # print("Solution: ")
-    # for i in range(len(supply)):
-    #     print([value(x[i][j]) for j in range(len(demand))])
     
     return LpStatus[prob.status], value(prob.objective), [[value(x[i][j]) for j in range(len(demand))] for i in range(len(supply))]
 
@@ -101,12 +90,6 @@ def utilize_solver(supply, demand, costs):
 # b = [b_i] (Constraint vector)
 # x = [x_i] (Variable vector)
 
-
-
-
-def standardize_lp(C, A, b, const_type, x_type, type): # const_types will be <= and x_types will be >=0
-    # Standardize the LP problem
-    pass
 
 
 if __name__ == "__main__":
