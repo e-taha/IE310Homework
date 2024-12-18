@@ -3,7 +3,7 @@
 **Title:** Transportation Problem - Instance Generation, Solver Comparison, and Complexity Analysis  
 **Date:** 18.12.2024  
 **Course:** IE 310  
-**Student(s):** Abdullah Umut Hamzaoğulları (2021400111), Taha Ensar Kukul ()
+**Student(s):** Abdullah Umut Hamzaoğulları (2021400111), Taha Ensar Kukul (2021400255)
 
 
 ---
